@@ -4,6 +4,7 @@ import time
 import sys
 import os
 import shutil
+import shlex
 import subprocess
 
 # *** START USER EDITABLE VARIABLES ***
@@ -13,10 +14,11 @@ USER = "jds2270"
 EMAIL = "jds2270@columbia.edu"
 # *** END USER EDITABLE VARIABLES ***
 
-
+# *** start constants ***
 MODEL_TYPE = "loopy"
 TRAIN_TEMPLATE_FOLDER_NAME = "{}_template".format(EXPT_NAME)
 #SHUFFLE_TEMPLATE_FOLDER_NAME = # TODO
+# *** end constants ***
 
 
 def check_templates():
@@ -96,7 +98,8 @@ def setup_train_working_dir(condition_names):
         scommand = ("matlab -nodesktop -nodisplay -r \"try, write_configs_for_" +
                     "{}, catch, end, exit\"".format(MODEL_TYPE))
         print("About to run:\n{}".format(scommand))
-        process_results = subprocess.run(scommand, shell=True)
+        sargs = shlex.split(scommand)
+        process_results = subprocess.run(sargs)
         if process_results.returncode:
             raise RuntimeError("Received non-zero return code: {}".format(process_results))
         print("Done running system command")
