@@ -20,7 +20,7 @@ TRAIN_TEMPLATE_FOLDER_NAME = "{}_template".format(EXPT_NAME)
 
 
 def check_templates():
-    """Make template folders from master templates if they do not exist already
+    """Make template folders from master templates if they do not exist already.
     """
     # Check train
     if not os.path.exists(TRAIN_TEMPLATE_FOLDER_NAME):
@@ -30,6 +30,11 @@ def check_templates():
 
 
 def setup_train_working_dir(condition_names):
+    """Mostly follows old create_script.pl.
+
+    Args:
+        condition_names ([str]): List of condition names to setup.
+    """
     for condition in condition_names:
         data_file = "{}_{}".format(EXPT_NAME, condition)
         experiment = "{}_{}_{}".format(EXPT_NAME, condition, MODEL_TYPE)
@@ -88,12 +93,15 @@ def setup_train_working_dir(condition_names):
         print("curr_dir = {}.\n".format(curr_dir))
         os.chdir(experiment)
         print("changed into dir: {}\n".format(os.curdir()))
-        scommand = "matlab -nodesktop -nodisplay -r \"try, write_configs_for_{}, catch, end, exit\"".format(MODEL_TYPE)
+        scommand = "matlab -nodesktop -nodisplay -r \"try, write_configs_for_" +
+                   "{}, catch, end, exit\"".format(MODEL_TYPE)
         print("About to run:\n{}\n".format(scommand))
-        # system($scommand);
-        # print "Done running system command\n";
-        # chdir($curr_dir);
-        # print "changed into dir: ".cwd()."\n";
+        process_results = subprocess.run(scommand)
+        if process_results.returncode:
+            raise RuntimeError("Received non-zero return code:\n{}".format(process_results))
+        print("Done running system command\n")
+        os.chdir(curr_dir)
+        print("changed into dir: {}\n".format(os.curdir()))
 
 
 if __name__ == '__main__':
