@@ -6,14 +6,14 @@ import os
 import shutil
 import subprocess
 
-EXPT_NAME = "temporal";
-MODEL_TYPE = "loopy";
-DATA_DIR = "~/data/";
-USER = "jds2270";
-EMAIL = "jds2270@columbia.edu";
+EXPT_NAME = "temporal"
+DATA_DIR = "~/data/"
+USER = "jds2270"
+EMAIL = "jds2270@columbia.edu"
 
+MODEL_TYPE = "loopy"
 TRAIN_TEMPLATE_FOLDER_NAME = "{}_template".format(EXPT_NAME)
-SHUFFLE_TEMPLATE_FOLDER_NAME = # TODO
+#SHUFFLE_TEMPLATE_FOLDER_NAME = # TODO
 
 
 def check_templates():
