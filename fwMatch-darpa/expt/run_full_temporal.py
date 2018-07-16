@@ -62,7 +62,7 @@ def setup_train_working_dir(condition_names):
             f.write("    'p_lambda_max', 1e+04, ...\n")
             f.write("    'time_span', 2);\n")
         f.closed
-        print("done writing write_configs_for_loopy.m\n")
+        print("done writing write_configs_for_loopy.m")
 
         # print("file: get_real_data.m\n")
         # with open("{}{}get_real_data.m".format(experiment, os.sep), 'w') as f:
@@ -89,19 +89,19 @@ def setup_train_working_dir(condition_names):
         # f.closed
         # print "done writing get_real_data.m\n";
 
-        curr_dir = os.curdir()
-        print("curr_dir = {}.\n".format(curr_dir))
+        curr_dir = os.getcwd()
+        print("curr_dir = {}.".format(curr_dir))
         os.chdir(experiment)
-        print("changed into dir: {}\n".format(os.curdir()))
-        scommand = "matlab -nodesktop -nodisplay -r \"try, write_configs_for_" +
-                   "{}, catch, end, exit\"".format(MODEL_TYPE)
-        print("About to run:\n{}\n".format(scommand))
-        process_results = subprocess.run(scommand)
+        print("changed into dir: {}".format(os.getcwd()))
+        scommand = ("matlab -nodesktop -nodisplay -r \"try, write_configs_for_" +
+                    "{}, catch, end, exit\"".format(MODEL_TYPE))
+        print("About to run:\n{}".format(scommand))
+        process_results = subprocess.run(scommand, shell=True)
         if process_results.returncode:
-            raise RuntimeError("Received non-zero return code:\n{}".format(process_results))
-        print("Done running system command\n")
+            raise RuntimeError("Received non-zero return code: {}".format(process_results))
+        print("Done running system command")
         os.chdir(curr_dir)
-        print("changed into dir: {}\n".format(os.curdir()))
+        print("changed into dir: {}".format(os.getcwd()))
 
 
 if __name__ == '__main__':
@@ -111,6 +111,6 @@ if __name__ == '__main__':
         check_templates()
         setup_train_working_dir(conditions)
     else:
-        raise TypeError("At least one condition name must be passed on the command line.\n")
+        raise TypeError("At least one condition name must be passed on the command line.")
 
     print("Total run time: {0:.2f} seconds".format(time.time() - start_time))
