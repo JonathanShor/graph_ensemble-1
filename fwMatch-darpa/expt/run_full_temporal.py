@@ -58,7 +58,7 @@ def setup_exec_train_model(condition_names):
 
         with open("{}{}write_configs_for_loopy.m".format(experiment, os.sep), 'w') as f:
             f.write("create_config_files( ...\n")
-            f.write("    'datapath', '{}{}',\n".format(DATA_DIR, data_file))
+            f.write("    'datapath', '{}{}', ...\n".format(DATA_DIR, data_file))
             f.write("    'experiment_name', '{}', ...\n".format(experiment))
             f.write("    'email_for_notifications', '{}', ...\n".format(EMAIL))
             f.write("    'yeti_user', '{}', ...\n".format(USER))
