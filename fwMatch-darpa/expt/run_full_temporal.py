@@ -159,10 +159,10 @@ def write_shuffling_yeti_script(experiment):
         f.write("#PBS -m ae\n")
         f.write("#PBS -V\n")
         f.write("#set output and error directories (SSCC example here)\n")
-        f.write("#PBS -o localhost:{}fwMatch-darpa/expt/{}/yeti_logs/\n".format(SOURCE_DIR,
-                                                                                experiment))
-        f.write("#PBS -e localhost:{}fwMatch-darpa/expt/{}/yeti_logs/\n".format(SOURCE_DIR,
-                                                                                experiment))
+        log_folder = "{}fwMatch-darpa/expt/{}/yeti_logs/".format(SOURCE_DIR, experiment)
+        os.makedirs(log_folder, exist_ok=True)
+        f.write("#PBS -o localhost:{}\n".format(log_folder))
+        f.write("#PBS -e localhost:{}\n".format(log_folder))
         f.write("#Command below is to execute Matlab code for Job Array (Example 4) " +
                 "so that each part writes own output\n")
         f.write("matlab -nodesktop -nodisplay -r \"dbclear all; addpath('" +
