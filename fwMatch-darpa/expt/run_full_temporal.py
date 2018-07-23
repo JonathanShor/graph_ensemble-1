@@ -160,7 +160,7 @@ def write_shuffling_yeti_script(experiment):
         f.write("#PBS -V\n")
         f.write("#set output and error directories (SSCC example here)\n")
         log_folder = "{}fwMatch-darpa/expt/{}/yeti_logs/".format(SOURCE_DIR, experiment)
-        os.makedirs(log_folder, exist_ok=True)
+        os.makedirs(os.path.expanduser(log_folder), exist_ok=True)
         f.write("#PBS -o localhost:{}\n".format(log_folder))
         f.write("#PBS -e localhost:{}\n".format(log_folder))
         f.write("#Command below is to execute Matlab code for Job Array (Example 4) " +
@@ -203,7 +203,7 @@ def setup_shuffle_model(condition_names):
         save_dir = "{}shuffled/{}".format(DATA_DIR, experiment)
         # prev_umask = os.umask(mode=os.stat(DATA_DIR).st_mode)
         # os.makedirs(save_dir, mode=os.stat(DATA_DIR).st_mode, exist_ok=True)
-        os.makedirs(save_dir, exist_ok=True)
+        os.makedirs(os.path.expanduser(save_dir), exist_ok=True)
         save_name = "shuffled_{}_{}".format(EXPT_NAME, condition)
 
         write_shuffling_script(experiment, data_file, save_dir, save_name)
