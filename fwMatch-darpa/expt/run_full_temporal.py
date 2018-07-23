@@ -1,5 +1,7 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
+"""Expected to be run from the expt folder.
+"""
 import time
 import sys
 import os
@@ -143,7 +145,7 @@ def write_shuffled_data_generating_script(experiment, data_file, save_dir, save_
         f.write("end\n")
         f.write("fprintf('done shuffling data\\n');\n")
     f.closed
-    logger.info("done writing {}\n".format(filepath))
+    logger.info("done writing {}".format(filepath))
 
 
 def write_shuffling_yeti_script(experiment):
@@ -172,7 +174,7 @@ def write_shuffling_yeti_script(experiment):
     f.closed
     # Set executable permissions
     os.chmod(filepath, stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH | os.stat(filepath).st_mode)
-    logger.info("done writing {}\n".format(filepath))
+    logger.info("done writing {}".format(filepath))
 
 
 def write_shuffling_submit_script(experiment):
@@ -184,7 +186,7 @@ def write_shuffling_submit_script(experiment):
     f.closed
     # Set executable permissions
     os.chmod(filepath, stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH | os.stat(filepath).st_mode)
-    logger.info("done writing {}\n".format(filepath))
+    logger.info("done writing {}".format(filepath))
 
 
 def write_shuffling_script(experiment, data_file, save_dir, save_name):
@@ -230,16 +232,46 @@ def create_shuffle_configs(conditions):
     pass
 
 
+def get_best_parameters(conditions, wait_seconds=5):
+    NUM_JOBS = 1
+    for param in [S_LAMBDAS, DENSITIES, P_LAMBDAS]:
+        NUM_JOBS *= param['num_points'] if param['parallize'] else 1
+
+    job_to_check = [1] * len(conditions)
+    # Generate path to results folder for each condition
+    paths = map(lambda condition: "{0}_{1}_{2}{3}results{3}".format(EXPT_NAME, condition,
+                                                                    MODEL_TYPE, os.sep),
+                conditions)
+
+    while any(job_to_check):
+        for i, path in enumerate(paths):
+            if job_to_check[i]:
+                # for j in range(1, NUM_JOBS + 1):
+                while os.path.exists("{}result{}.mat".format(path, job_to_check[i])):
+                    job_to_check[i] += 1
+                if job_to_check[i] > NUM_JOBS:
+                    # merge
+                    # save
+                    # grab and return params
+                    job_to_check[i] = False
+        time.sleep(wait_seconds)
+
+    print("All result files found")
+
+
 if __name__ == '__main__':
     start_time = time.time()
     conditions = sys.argv[1:]
     if conditions:
+        if len(conditions) > 1:
+            raise ValueError("Multiple conditions not currently supported.")
         check_templates()
         setup_exec_train_model(conditions)
         # Create bare-bones shuffle folder and create shuffled datasets
         setup_shuffle_model(conditions)
         # Wait for train CRF to be done
         # Run merge and save_best, grabbing best params
+        get_best_parameters(conditions)
         # create shuffle configs with best params (write and run write_configs_for_loopy.m)
         create_shuffle_configs(conditions)
         # Run shuffle/start_jobs.sh
