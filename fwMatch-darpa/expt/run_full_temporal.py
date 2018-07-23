@@ -208,6 +208,26 @@ def setup_shuffle_model(condition_names):
 
         write_shuffling_script(experiment, data_file, save_dir, save_name)
 
+        curr_dir = os.getcwd()
+        logger.debug("curr_dir = {}.".format(curr_dir))
+        os.chdir(experiment)
+        logger.debug("changed into dir: {}".format(os.getcwd()))
+
+        shell_command = "./shuffle_start_job.sh"
+        logger.debug("About to run {}".format(shell_command))
+        process_results = subprocess.run(shell_command, shell=True)
+        if process_results.returncode:
+            logger.critical("\nAre you on the yeti cluster? Job submission failed.")
+            raise RuntimeError("Received non-zero return code: {}".format(process_results))
+        logger.info("Shuffled dataset creation job submitted.")
+
+        os.chdir(curr_dir)
+        logger.debug("changed back to dir: {}".format(os.getcwd()))
+
+
+def create_shuffle_configs(conditions):
+    pass
+
 
 if __name__ == '__main__':
     start_time = time.time()
@@ -215,12 +235,12 @@ if __name__ == '__main__':
     if conditions:
         check_templates()
         setup_exec_train_model(conditions)
-        # Create bare-bones shuffle folder
+        # Create bare-bones shuffle folder and create shuffled datasets
         setup_shuffle_model(conditions)
-        # run shuffle dataset creation, if needed
         # Wait for train CRF to be done
         # Run merge and save_best, grabbing best params
-        # create shuffle configs with best params
+        # create shuffle configs with best params (write and run write_configs_for_loopy.m)
+        create_shuffle_configs(conditions)
         # Run shuffle/start_jobs.sh
         # Wait for shuffle CRFs to be done
         # Run merge and save_shuffle
