@@ -9,6 +9,7 @@ import stat
 import shutil
 import shlex
 import subprocess
+import h5py
 
 import logging
 logger = logging.getLogger(__name__)
@@ -228,35 +229,68 @@ def setup_shuffle_model(condition_names):
         logger.debug("changed back to dir: {}".format(os.getcwd()))
 
 
-def create_shuffle_configs(conditions):
+def create_shuffle_configs(conditions, best_params):
     pass
 
 
-def get_best_parameters(conditions, wait_seconds=5):
+def get_best_parameters(condition_names, wait_seconds=5):
+    """Wait for the result files to be available, and extract the best parameters.
+
+    Args:
+        condition_names ([str]): List of condition names.
+        wait_seconds (float, optional): Number of seconds to sleep between checking for result
+            files.
+
+    Raises:
+        RuntimeError: Shell command to execute Matlab script failed.
+
+    Returns:
+        dict of dicts: Best parameters for each condition. Parameters stored as a dict with
+            PARAMS_TO_EXTRACT as the keys.
+    """
+    PARAMS_TO_EXTRACT = ['s_lambdas', 'densities', 'p_lambdas', 'time_span']
+    best_params = {name: {} for name in condition_names}
     NUM_JOBS = 1
     for param in [S_LAMBDAS, DENSITIES, P_LAMBDAS]:
         NUM_JOBS *= param['num_points'] if param['parallize'] else 1
 
-    job_to_check = [1] * len(conditions)
+    job_to_check = [1] * len(condition_names)
     # Generate path to results folder for each condition
-    paths = map(lambda condition: "{0}_{1}_{2}{3}results{3}".format(EXPT_NAME, condition,
-                                                                    MODEL_TYPE, os.sep),
-                conditions)
+    results_paths = map(lambda condition: "{0}_{1}_{2}{3}results{3}".format(EXPT_NAME, condition,
+                                                                            MODEL_TYPE, os.sep),
+                        condition_names)
 
+    # TODO: Parellize this loop so finished conditions can proceed immediately.
     while any(job_to_check):
-        for i, path in enumerate(paths):
+        for i, results_path in enumerate(results_paths):
             if job_to_check[i]:
                 # for j in range(1, NUM_JOBS + 1):
-                while os.path.exists("{}result{}.mat".format(path, job_to_check[i])):
+                while os.path.exists("{}result{}.mat".format(results_path, job_to_check[i])):
                     job_to_check[i] += 1
                 if job_to_check[i] > NUM_JOBS:
-                    # merge
-                    # save
-                    # grab and return params
+                    # merge & save models
+                    scommand = ("matlab -nodesktop -nodisplay -nosplash -r \"" +
+                                "addpath(genpath('{}')); ".format(SOURCE_DIR) +
+                                "save_best_parameters({}); ".format(results_path) +
+                                "exit\"")
+                    logger.debug("About to run:\n{}".format(scommand))
+                    sargs = shlex.split(scommand)
+                    process_results = subprocess.run(sargs)
+                    if process_results.returncode:
+                        raise RuntimeError("Received non-zero return code: " +
+                                           "{}".format(process_results))
+                    logger.info("Training models saved.")
+
+                    # grab and return best params
+                    best_model = h5py.File(results_path + "best_model_full.mat")
+                    for param in PARAMS_TO_EXTRACT:
+                        best_params[condition_names[i]][param] = best_model[param][0, 0]
+
                     job_to_check[i] = False
+                    logger.info("Best parameters collected for {}.".format(condition_names[i]))
         time.sleep(wait_seconds)
 
-    print("All result files found")
+    return best_params
 
 
 if __name__ == '__main__':
@@ -271,9 +305,9 @@ if __name__ == '__main__':
         setup_shuffle_model(conditions)
         # Wait for train CRF to be done
         # Run merge and save_best, grabbing best params
-        get_best_parameters(conditions)
+        best_params = get_best_parameters(conditions)
         # create shuffle configs with best params (write and run write_configs_for_loopy.m)
-        create_shuffle_configs(conditions)
+        create_shuffle_configs(conditions, best_params)
         # Run shuffle/start_jobs.sh
         # Wait for shuffle CRFs to be done
         # Run merge and save_shuffle
