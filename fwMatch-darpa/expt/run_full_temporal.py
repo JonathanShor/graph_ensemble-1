@@ -68,7 +68,8 @@ def setup_exec_train_model(condition_names):
         logger.info("Copying {} to {}".format(TRAIN_TEMPLATE_FOLDER_NAME, experiment))
         shutil.copytree(TRAIN_TEMPLATE_FOLDER_NAME, experiment)
 
-        with open("{}{}write_configs_for_loopy.m".format(experiment, os.sep), 'w') as f:
+        fname = "{}{}write_configs_for_loopy.m".format(experiment, os.sep)
+        with open(fname, 'w') as f:
             f.write("create_config_files( ...\n")
             f.write("    'datapath', '{}{}', ...\n".format(DATA_DIR, data_file))
             f.write("    'experiment_name', '{}', ...\n".format(experiment))
@@ -96,7 +97,7 @@ def setup_exec_train_model(condition_names):
             f.write("    'p_lambda_max', {}, ...\n".format(P_LAMBDAS['max']))
             f.write("    'time_span', {});\n".format(TIME_SPAN))
         f.closed
-        logger.info("done writing write_configs_for_loopy.m")
+        logger.info("done writing {}".format(fname))
 
         curr_dir = os.getcwd()
         logger.debug("curr_dir = {}.".format(curr_dir))
@@ -141,8 +142,9 @@ def write_shuffled_data_generating_script(experiment, data_file, save_dir, save_
         f.write("\tdata = shuffle(data_raw,'exchange')';\n")
         f.write("\tstimuli = data(:, end - num_stimuli + 1:end);\n")
         f.write("\tdata = data(:, 1:end - num_stimuli);\n")
-        f.write("\tsave(['{}/{}_' num2str(i) '.mat'],'data','stimuli');\n".format(save_dir,
-                                                                                  save_name))
+        f.write("\tsave(['{}{}{}_' num2str(i) '.mat'],'data','stimuli');\n".format(save_dir,
+                                                                                   os.sep,
+                                                                                   save_name))
         f.write("end\n")
         f.write("fprintf('done shuffling data\\n');\n")
     f.closed
