@@ -290,11 +290,11 @@ def create_shuffle_configs(conditions, best_params):
         logger.debug("changed back to dir: {}".format(os.getcwd()))
 
 
-def get_best_parameters(condition_names, wait_seconds=5):
+def get_best_parameters(conditions, wait_seconds=5):
     """Wait for the result files to be available, and extract the best parameters.
 
     Args:
-        condition_names ([str]): List of condition names.
+        conditions (dict): Dict of condition names: paths.
         wait_seconds (float, optional): Number of seconds to sleep between checking for result
             files.
 
@@ -305,52 +305,61 @@ def get_best_parameters(condition_names, wait_seconds=5):
         dict of dicts: Best parameters for each condition. Parameters stored as a dict with
             PARAMS_TO_EXTRACT as the keys.
     """
-    best_params = {name: {} for name in condition_names}
+    best_params = {name: {} for name in conditions}
     NUM_JOBS = 1
     for param in [S_LAMBDAS, DENSITIES, P_LAMBDAS]:
         NUM_JOBS *= param['num_points'] if param['parallize'] else 1
 
-    job_to_check = [1] * len(condition_names)
-    # Generate path to results folder for each condition
-    results_paths = ["{0}_{1}_{2}{3}results{3}".format(EXPT_NAME, condition, MODEL_TYPE, os.sep)
-                     for condition in condition_names]
+    # Generate path to results folder for each condition, init job # to check at 1
+    conditions_to_check = {name: {'job': 1,
+                                  'results_path': "{0}_{1}_{2}{3}results{3}".format(
+                                      EXPT_NAME, name, MODEL_TYPE, os.sep)
+                                  }
+                           for name in conditions}
 
     logger.info("Start waiting for train results files.")
     num_waits = 0
     # TODO: Parellize this loop so finished conditions can proceed immediately.
-    while any(job_to_check):
-        for i, results_path in enumerate(results_paths):
-            if job_to_check[i]:
-                # for j in range(1, NUM_JOBS + 1):
-                while os.path.exists("{}result{}.mat".format(results_path, job_to_check[i])):
-                    job_to_check[i] += 1
-                if job_to_check[i] > NUM_JOBS:
-                    # merge & save models
-                    scommand = ("matlab -nodesktop -nodisplay -nosplash -r \"" +
-                                "addpath(genpath('{}')); ".format(SOURCE_DIR) +
-                                "save_best_params('{}'); ".format(results_path) +
-                                "exit\"")
-                    logger.debug("About to run:\n{}".format(scommand))
-                    sargs = shlex.split(scommand)
-                    process_results = subprocess.run(sargs)
-                    if process_results.returncode:
-                        raise RuntimeError("Received non-zero return code: " +
-                                           "{}".format(process_results))
-                    logger.info("Training models saved.")
-
-                    # grab and return best params
-                    with open(results_path + "best_parameters.txt", 'r') as f:
-                        for param in PARAMS_TO_EXTRACT:
-                            best_params[condition_names[i]][param] = float(f.readline())
-                    f.closed
-
-                    job_to_check[i] = False
-                    logger.info("Best parameters collected for {}.".format(condition_names[i]))
+    while conditions_to_check:
         time.sleep(wait_seconds)
         num_waits += 1
         if (num_waits % 100) == 0:
             logger.info("Waited for {} sleep cycles so far. Currently waiting for: {}".format(
-                num_waits, list(zip(condition_names, job_to_check))))
+                num_waits, conditions_to_check))
+
+        conditions_to_stop_checking = []
+        for name, to_check in conditions_to_check.items():
+            while os.path.exists("{}result{}.mat".format(to_check['results_path'],
+                                                         to_check['job'])):
+                to_check['job'] += 1
+            if to_check['job'] > NUM_JOBS:
+                # merge & save models
+                scommand = ("matlab -nodesktop -nodisplay -nosplash -r \"" +
+                            "addpath(genpath('{}')); ".format(SOURCE_DIR) +
+                            "save_best_params('{}'); ".format(to_check['results_path']) +
+                            "exit\"")
+                logger.debug("About to run:\n{}".format(scommand))
+                sargs = shlex.split(scommand)
+                process_results = subprocess.run(sargs)
+                if process_results.returncode:
+                    raise RuntimeError("Received non-zero return code: " +
+                                       "{}".format(process_results))
+                logger.info("Training models saved.")
+
+                # grab and return best params
+                with open(to_check['results_path'] + "best_parameters.txt", 'r') as f:
+                        for param in PARAMS_TO_EXTRACT:
+                            best_params[name][param] = float(f.readline())
+                f.closed
+                logger.info("Best parameters collected for {}.".format(name))
+                logger.debug("{}".format(best_params[name]))
+
+                # Risky to delete dict entries while iterating thru them,
+                # so collect and batch delete after
+                conditions_to_stop_checking.append(name)
+
+        for finished in conditions_to_stop_checking:
+            del conditions_to_check[finished]
 
     logger.info("Parameters for all conditions collected.\n")
     return best_params
