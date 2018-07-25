@@ -154,7 +154,7 @@ def write_shuffled_data_generating_script(experiment, data_file, save_dir, save_
 
 def write_shuffling_yeti_script(experiment):
     # write yeti script
-    filepath = "{}{}shuffle_yeti_config.sh".format(experiment, os.set)
+    filepath = "{}{}shuffle_yeti_config.sh".format(experiment, os.sep)
     logger.debug("writing file: {}".format(filepath))
     with open(filepath, 'w') as f:
         f.write("#!/bin/sh\n")
