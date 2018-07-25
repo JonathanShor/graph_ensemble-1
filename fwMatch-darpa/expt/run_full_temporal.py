@@ -214,24 +214,22 @@ def write_shuffling_script(experiment, data_file, save_dir, save_name):
     logger.info("done writing {} yeti scripts\n".format(experiment))
 
 
-def setup_shuffle_model(condition_names):
-    for condition in condition_names:
-        experiment = "shuffled_{}_{}_{}".format(EXPT_NAME, condition, MODEL_TYPE)
-        logger.info("Copying {} to {}".format(SHUFFLE_TEMPLATE_FOLDER_NAME, experiment))
-        shutil.copytree(SHUFFLE_TEMPLATE_FOLDER_NAME, experiment)
-        data_file = "{}_{}.mat".format(EXPT_NAME, condition)
+def setup_shuffle_model(conditions):
+    for name, paths in conditions.items():
+        logger.info("Copying {} to {}".format(SHUFFLE_TEMPLATE_FOLDER_NAME,
+                                              paths['shuffle_experiment']))
+        shutil.copytree(SHUFFLE_TEMPLATE_FOLDER_NAME, paths['shuffle_experiment'])
 
-        save_dir = "{}shuffled{}{}".format(DATA_DIR, os.sep, experiment)
-        # prev_umask = os.umask(mode=os.stat(DATA_DIR).st_mode)
-        # os.makedirs(save_dir, mode=os.stat(DATA_DIR).st_mode, exist_ok=True)
-        os.makedirs(os.path.expanduser(save_dir), exist_ok=True)
-        save_name = "shuffled_{}_{}".format(EXPT_NAME, condition)
+        os.makedirs(os.path.expanduser(paths['shuffle_save_dir']), exist_ok=True)
 
-        write_shuffling_script(experiment, data_file, save_dir, save_name)
+        write_shuffling_script(paths['shuffle_experiment'],
+                               paths['data_file'],
+                               paths['shuffle_save_dir'],
+                               paths['shuffle_save_name'])
 
         curr_dir = os.getcwd()
         logger.debug("curr_dir = {}.".format(curr_dir))
-        os.chdir(experiment)
+        os.chdir(paths['shuffle_experiment'])
         logger.debug("changed into dir: {}".format(os.getcwd()))
 
         shell_command = ".{}shuffle_start_job.sh".format(os.sep)
