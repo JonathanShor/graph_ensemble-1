@@ -245,40 +245,37 @@ def setup_shuffle_model(conditions):
 
 
 def create_shuffle_configs(conditions, best_params):
-    for condition in conditions:
-        experiment = "shuffled_{}_{}_{}".format(EXPT_NAME, condition, MODEL_TYPE)
-        save_dir = "{}shuffled/{}".format(DATA_DIR, experiment)
-        save_name = "shuffled_{}_{}".format(EXPT_NAME, condition)
-
-        fname = "{}{}write_configs_for_loopy.m".format(experiment, os.sep)
+    for name, paths in conditions.items():
+        fname = "{}{}write_configs_for_loopy.m".format(paths['shuffle_experiment'], os.sep)
         with open(fname, 'w') as f:
             f.write("create_shuffle_config_files( ...\n")
-            f.write("    'datapath', '{}{}{}.mat', ...\n".format(save_dir, os.sep, save_name))
-            f.write("    'experiment_name', '{}', ...\n".format(experiment))
+            f.write("    'datapath', '{}{}{}.mat', ...\n".format(paths['shuffle_save_dir'], os.sep,
+                                                                 paths['shuffle_save_name']))
+            f.write("    'experiment_name', '{}', ...\n".format(paths['shuffle_experiment']))
             f.write("    'email_for_notifications', '{}', ...\n".format(EMAIL))
             f.write("    'yeti_user', '{}', ...\n".format(USER))
             f.write("    'compute_true_logZ', false, ...\n")
             f.write("    'reweight_denominator', 'mean_degree', ...\n")
             # f.write("    's_lambda_splits', 1, ...\n")
             # f.write("    's_lambdas_per_split', 1, ...\n")
-            f.write("    's_lambda_min', {}, ...\n".format(best_params[condition]['s_lambda']))
-            f.write("    's_lambda_max', {}, ...\n".format(best_params[condition]['s_lambda']))
+            f.write("    's_lambda_min', {}, ...\n".format(best_params[name]['s_lambda']))
+            f.write("    's_lambda_max', {}, ...\n".format(best_params[name]['s_lambda']))
             # f.write("    'density_splits', 1, ...\n")
             # f.write("    'densities_per_split', 1, ...\n")
-            f.write("    'density_min', {}, ...\n".format(best_params[condition]['density']))
-            f.write("    'density_max', {}, ...\n".format(best_params[condition]['density']))
+            f.write("    'density_min', {}, ...\n".format(best_params[name]['density']))
+            f.write("    'density_max', {}, ...\n".format(best_params[name]['density']))
             # f.write("    'p_lambda_splits', 1, ...\n")
             # f.write("    'p_lambdas_per_split', 1, ...\n")
-            f.write("    'p_lambda_min', {}, ...\n".format(best_params[condition]['p_lambda']))
-            f.write("    'p_lambda_max', {}, ...\n".format(best_params[condition]['p_lambda']))
-            f.write("    'time_span', {}, ...\n".format(best_params[condition]['time_span']))
+            f.write("    'p_lambda_min', {}, ...\n".format(best_params[name]['p_lambda']))
+            f.write("    'p_lambda_max', {}, ...\n".format(best_params[name]['p_lambda']))
+            f.write("    'time_span', {}, ...\n".format(best_params[name]['time_span']))
             f.write("    'num_shuffle', {});\n".format(NSHUFFLE))
         f.closed
         logger.info("done writing {}".format(fname))
 
         curr_dir = os.getcwd()
         logger.debug("curr_dir = {}.".format(curr_dir))
-        os.chdir(experiment)
+        os.chdir(paths['shuffle_experiment'])
         logger.debug("changed into dir: {}".format(os.getcwd()))
         scommand = ("matlab -nodesktop -nodisplay -r \"" +
                     "write_configs_for_{}, exit\"".format(MODEL_TYPE))
