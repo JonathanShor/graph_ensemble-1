@@ -308,6 +308,8 @@ def get_best_parameters(condition_names, wait_seconds=5):
                                                                             MODEL_TYPE, os.sep),
                         condition_names)
 
+    logger.info("Start waiting for train results files.")
+    num_waits = 0
     # TODO: Parellize this loop so finished conditions can proceed immediately.
     while any(job_to_check):
         for i, results_path in enumerate(results_paths):
@@ -337,7 +339,12 @@ def get_best_parameters(condition_names, wait_seconds=5):
                     job_to_check[i] = False
                     logger.info("Best parameters collected for {}.".format(condition_names[i]))
         time.sleep(wait_seconds)
+        num_waits += 1
+        if (num_waits % 100) == 0:
+            logger.info("Waited for {} sleep cycles so far. Currently waiting for: {}".format(
+                num_waits, list(zip(condition_names, job_to_check))))
 
+    logger.info("Parameters for all conditions collected.\n")
     return best_params
 
 
