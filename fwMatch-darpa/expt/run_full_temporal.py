@@ -39,6 +39,7 @@ NSHUFFLE = 100
 # *** END USER EDITABLE VARIABLES ***
 
 # *** start constants ***
+PARAMS_TO_EXTRACT = ['s_lambdas', 'densities', 'p_lambdas', 'time_span']
 MODEL_TYPE = "loopy"
 TRAIN_TEMPLATE_FOLDER_NAME = "{}_template".format(EXPT_NAME)
 SHUFFLE_TEMPLATE_FOLDER_NAME = "shuffled_{}".format(TRAIN_TEMPLATE_FOLDER_NAME)
@@ -295,7 +296,6 @@ def get_best_parameters(condition_names, wait_seconds=5):
         dict of dicts: Best parameters for each condition. Parameters stored as a dict with
             PARAMS_TO_EXTRACT as the keys.
     """
-    PARAMS_TO_EXTRACT = ['s_lambdas', 'densities', 'p_lambdas', 'time_span']
     best_params = {name: {} for name in condition_names}
     NUM_JOBS = 1
     for param in [S_LAMBDAS, DENSITIES, P_LAMBDAS]:
