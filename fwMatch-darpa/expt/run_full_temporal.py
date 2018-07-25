@@ -73,23 +73,21 @@ def check_templates():
         shutil.copytree("shuffled_template", SHUFFLE_TEMPLATE_FOLDER_NAME)
 
 
-def setup_exec_train_model(condition_names):
+def setup_exec_train_model(conditions):
     """Mostly follows old create_script.pl.
 
     Args:
-        condition_names ([str]): List of condition names to setup.
+        conditions (dict): Dict of condition names: paths.
     """
-    for condition in condition_names:
-        data_file = "{}_{}.mat".format(EXPT_NAME, condition)
-        experiment = "{}_{}_{}".format(EXPT_NAME, condition, MODEL_TYPE)
-        logger.info("Copying {} to {}".format(TRAIN_TEMPLATE_FOLDER_NAME, experiment))
-        shutil.copytree(TRAIN_TEMPLATE_FOLDER_NAME, experiment)
+    for name, paths in conditions.items():
+        logger.info("Copying {} to {}".format(TRAIN_TEMPLATE_FOLDER_NAME, paths['experiment']))
+        shutil.copytree(TRAIN_TEMPLATE_FOLDER_NAME, paths['experiment'])
 
-        fname = "{}{}write_configs_for_loopy.m".format(experiment, os.sep)
+        fname = "{}{}write_configs_for_loopy.m".format(paths['experiment'], os.sep)
         with open(fname, 'w') as f:
             f.write("create_config_files( ...\n")
-            f.write("    'datapath', '{}{}', ...\n".format(DATA_DIR, data_file))
-            f.write("    'experiment_name', '{}', ...\n".format(experiment))
+            f.write("    'datapath', '{}{}', ...\n".format(DATA_DIR, paths['data_file']))
+            f.write("    'experiment_name', '{}', ...\n".format(paths['experiment']))
             f.write("    'email_for_notifications', '{}', ...\n".format(EMAIL))
             f.write("    'yeti_user', '{}', ...\n".format(USER))
             f.write("    'compute_true_logZ', false, ...\n")
@@ -118,7 +116,7 @@ def setup_exec_train_model(condition_names):
 
         curr_dir = os.getcwd()
         logger.debug("curr_dir = {}.".format(curr_dir))
-        os.chdir(experiment)
+        os.chdir(paths['experiment'])
         logger.debug("changed into dir: {}".format(os.getcwd()))
         scommand = ("matlab -nodesktop -nodisplay -r \"try, write_configs_for_" +
                     "{}, catch, end, exit\"".format(MODEL_TYPE))
@@ -374,13 +372,15 @@ def exec_shuffle_model(conditions):
         logger.info("Training job(s) submitted.")
 
 
-
 if __name__ == '__main__':
     start_time = time.time()
-    conditions = sys.argv[1:]
+
+    # Each condition is a dict containing condition specific filepaths
+    conditions = {name: {} for name in sys.argv[1:]}
     if conditions:
         if len(conditions) > 1:
             raise ValueError("Multiple conditions not currently supported.")
+        conditions = get_conditions_metadata(conditions)
         check_templates()
         setup_exec_train_model(conditions)
         # Create bare-bones shuffle folder and create shuffled datasets
