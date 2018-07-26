@@ -9,7 +9,6 @@ import stat
 import shutil
 import shlex
 import subprocess
-import h5py
 
 import logging
 logger = logging.getLogger(__name__)
@@ -39,8 +38,12 @@ NSHUFFLE = 100
 # *** END USER EDITABLE VARIABLES ***
 
 # *** start constants ***
-PARAMS_TO_EXTRACT = ['s_lambdas', 'densities', 'p_lambdas', 'time_span']
 MODEL_TYPE = "loopy"
+
+# These parameters and their order must match best_parameters.txt.
+# See save_best_parameters.m for best_parameters.txt creation.
+PARAMS_TO_EXTRACT = ['s_lambda', 'density', 'p_lambda', 'time_span']
+
 TRAIN_TEMPLATE_FOLDER_NAME = "{}_template".format(EXPT_NAME)
 SHUFFLE_TEMPLATE_FOLDER_NAME = "shuffled_{}".format(TRAIN_TEMPLATE_FOLDER_NAME)
 # *** end constants ***
@@ -143,9 +146,8 @@ def write_shuffled_data_generating_script(experiment, data_file, save_dir, save_
         f.write("\tdata = shuffle(data_raw,'exchange')';\n")
         f.write("\tstimuli = data(:, end - num_stimuli + 1:end);\n")
         f.write("\tdata = data(:, 1:end - num_stimuli);\n")
-        f.write("\tsave(['{}{}{}_' num2str(i) '.mat'],'data','stimuli');\n".format(save_dir,
-                                                                                   os.sep,
-                                                                                   save_name))
+        f.write("\tsave(['{}{}{}_' num2str(i) '.mat'],'data','stimuli');\n".format(
+            save_dir, os.sep, save_name))
         f.write("end\n")
         f.write("fprintf('done shuffling data\\n');\n")
     f.closed
@@ -173,8 +175,8 @@ def write_shuffling_yeti_script(experiment):
         f.write("#Command below is to execute Matlab code for Job Array (Example 4) " +
                 "so that each part writes own output\n")
         f.write("matlab -nodesktop -nodisplay -r \"dbclear all; addpath('" +
-                "{0}fwMatch-darpa{2}expt{2}{1}');gn_shuff_data; exit\"\n".format(SOURCE_DIR,
-                    experiment, os.sep))
+                "{0}fwMatch-darpa{2}expt{2}{1}');".format(SOURCE_DIR, experiment, os.sep) +
+                "gn_shuff_data; exit\"\n")
         f.write("#End of script\n")
     f.closed
     # Set executable permissions
@@ -304,9 +306,8 @@ def get_best_parameters(condition_names, wait_seconds=5):
 
     job_to_check = [1] * len(condition_names)
     # Generate path to results folder for each condition
-    results_paths = map(lambda condition: "{0}_{1}_{2}{3}results{3}".format(EXPT_NAME, condition,
-                                                                            MODEL_TYPE, os.sep),
-                        condition_names)
+    results_paths = ["{0}_{1}_{2}{3}results{3}".format(EXPT_NAME, condition, MODEL_TYPE, os.sep)
+                     for condition in condition_names]
 
     logger.info("Start waiting for train results files.")
     num_waits = 0
@@ -321,7 +322,7 @@ def get_best_parameters(condition_names, wait_seconds=5):
                     # merge & save models
                     scommand = ("matlab -nodesktop -nodisplay -nosplash -r \"" +
                                 "addpath(genpath('{}')); ".format(SOURCE_DIR) +
-                                "save_best_parameters({}); ".format(results_path) +
+                                "save_best_params('{}'); ".format(results_path) +
                                 "exit\"")
                     logger.debug("About to run:\n{}".format(scommand))
                     sargs = shlex.split(scommand)
@@ -332,9 +333,10 @@ def get_best_parameters(condition_names, wait_seconds=5):
                     logger.info("Training models saved.")
 
                     # grab and return best params
-                    best_model = h5py.File(results_path + "best_model_full.mat")
-                    for param in PARAMS_TO_EXTRACT:
-                        best_params[condition_names[i]][param] = best_model[param][0, 0]
+                    with open(results_path + "best_parameters.txt", 'r') as f:
+                        for param in PARAMS_TO_EXTRACT:
+                            best_params[condition_names[i]][param] = float(f.readline())
+                    f.closed
 
                     job_to_check[i] = False
                     logger.info("Best parameters collected for {}.".format(condition_names[i]))
