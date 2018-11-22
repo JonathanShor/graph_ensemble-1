@@ -12,17 +12,19 @@ class Workflow(object):
     Attributes:
         condition_name (str): String label for current trial.
         data_dir (str): Path to dataset folder. Set by settings file.
-        debug_filelogging (bool): Whether additional info will be emitted to log files. Set by
-            settings file.
+        debug_filelogging (bool): Whether additional info will be emitted to log files.
+            Set by settings file.
         destination_path (str): Planned feature. No current use.
         edges (str): Edge constraints setting. Set by settings file.
-        experiment_group (str): Experiment group label for current trial. Set by settings file.
+        experiment_group (str): Experiment group label for current trial. Set by settings
+            file.
         ini_fname (str): Filepath to settings file.
-        no_same_neuron_edges (bool): Ensure no edges between nodes for the same neuron, i.e. nodes
-            across time_span for each neuron. Set by settings file.
+        no_same_neuron_edges (bool): Ensure no edges between nodes for the same neuron,
+            i.e. nodes across time_span for each neuron. Set by settings file.
         source_dir (str): Path to the root of this repo. Set in settings file.
         time_span (int): Maximum sequence length to consider. Set by settings file.
-        verbosity (int): Determines degree of logging output to console. Set by settings file.
+        verbosity (int): Determines degree of logging output to console. Set by settings
+            file.
     """
 
     def __init__(
@@ -36,10 +38,11 @@ class Workflow(object):
 
         Args:
             condition_name (str): String label for current trial.
-            ini_fname (str, optional): Filepath to settings file. Defaults to "crf_parameters.ini"
-                in current directory.
+            ini_fname (str, optional): Filepath to settings file. Defaults to
+                "crf_parameters.ini" in current directory.
             destination_path (str, optional): Planned feature. No current use.
-            logger (logging object, optional): Logger to use. Will produce its own by default.
+            logger (logging object, optional): Logger to use. Will produce its own by
+                default.
         """
         self.condition_name = condition_name
         self.ini_fname = ini_fname
